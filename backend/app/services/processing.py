@@ -82,6 +82,14 @@ async def process_inspection_run(run_id: int, db: AsyncSession) -> dict:
             # Run YOLO inference
             raw_detections = inference_service.detect(str(image_path))
 
+            # Flag images with no detections — likely not a road photo
+            if not raw_detections:
+                image.error_message = "no_road_damage_detected"
+                logger.info(
+                    f"No detections in {image.original_filename} — "
+                    "image may not contain road damage or may not be a road photo"
+                )
+
             # Create Detection records
             for det in raw_detections:
                 detection = Detection(

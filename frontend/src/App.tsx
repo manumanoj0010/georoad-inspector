@@ -41,6 +41,11 @@ export default function App() {
     window.location.reload();
   };
 
+  // Images where YOLO found no road damage (likely non-road photos)
+  const nonRoadImages = images.filter(i =>
+    i.processing_status === 'completed' && i.error_message === 'no_road_damage_detected'
+  );
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
@@ -82,6 +87,49 @@ export default function App() {
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
             {error}
+          </div>
+        )}
+
+        {/* Non-road image warning */}
+        {nonRoadImages.length > 0 && currentStep === 'review' && (
+          <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="flex items-start gap-2">
+              <span className="text-amber-500 text-lg">⚠️</span>
+              <div>
+                <p className="text-sm font-semibold text-amber-800">
+                  {nonRoadImages.length} image{nonRoadImages.length > 1 ? 's' : ''} had no road damage detected
+                </p>
+                <p className="text-xs text-amber-700 mt-1">
+                  These images may not show road surfaces, or road damage is not visible.
+                  The YOLO model only detects: potholes, longitudinal cracks, transverse cracks, alligator cracks.
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {nonRoadImages.map(img => (
+                    <span key={img.id} className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded">
+                      {img.original_filename}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* All images had no detections */}
+        {currentStep === 'review' && detections.length === 0 && images.length > 0 &&
+          images.every(i => i.processing_status === 'completed') && (
+          <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+            <div className="flex items-start gap-2">
+              <span className="text-xl">🔍</span>
+              <div>
+                <p className="font-semibold">No road damage detected in any uploaded image.</p>
+                <p className="mt-1 text-xs text-blue-700">
+                  This can happen if: images are not of road surfaces, the road appears undamaged,
+                  image quality is low, or damage is not one of the 4 supported types.
+                  Try uploading clearer road-surface images with visible damage.
+                </p>
+              </div>
+            </div>
           </div>
         )}
 
