@@ -5,6 +5,11 @@ __pycache__/
 venv/
 .venv/
 *.db
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
 
 # Uploads
 backend/uploads/
@@ -30,3 +35,13 @@ Thumbs.db
 # Include road_damage_best.pt for deployment
 *.pt
 !backend/models/road_damage_best.pt
+
+# Local HF Space working directories (separate repos, not part of main project)
+georoad-yolo/
+georoad-yolo-clean/
+
+# Alembic
+backend/migrations/versions/*.pyc
+
+# Inference service local model copy (pushed to HF separately)
+inference-service/models/
