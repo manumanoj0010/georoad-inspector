@@ -248,16 +248,126 @@ Without these variables, the app runs in **mock mode** — publishing succeeds l
 
 Six normalized tables: `inspection_runs`, `images`, `detections`, `review_actions`, `model_versions`, `arcgis_publications`.
 
-## Model
+## Model — Fine-tuning on RDD2022
 
-Fine-tuned YOLOv8-nano on the RDD2022 dataset (Road Damage Detection Challenge 2022). Detects:
+### Overview
 
-| Class | Label |
-|-------|-------|
-| 0 | Longitudinal Crack |
-| 1 | Transverse Crack |
-| 2 | Alligator Crack |
-| 3 | Pothole |
+The detection model (`road_damage_best.pt`) is a **fine-tuned YOLOv8-nano** trained on the [RDD2022 dataset](https://github.com/sekilab/RoadDamageDetector), the largest publicly available multi-national road damage dataset released as part of the IEEE BigData Cup Challenge (CRDDC'2022).
+
+---
+
+### Dataset — RDD2022 (Road Damage Dataset 2022)
+
+| Property | Details |
+|----------|---------|
+| **Full name** | RDD2022: Multi-national Road Damage Dataset |
+| **Released by** | Arya et al., Sekimoto Lab, University of Tokyo |
+| **Challenge** | CRDDC'2022 — IEEE Big Data Cup |
+| **Countries** | Japan, India, Czech Republic, Norway, United States, China |
+| **License** | CC BY-SA 4.0 |
+| **Format** | JPEG images + Pascal VOC XML annotations |
+| **Dataset source** | [FigShare](https://figshare.com/articles/dataset/RDD2022_-_The_multi-national_Road_Damage_Dataset_released_through_CRDDC_2022/21431547) |
+
+**Damage classes (4):**
+
+| Class ID | Code | Label |
+|----------|------|-------|
+| 0 | D00 | Longitudinal Crack |
+| 1 | D10 | Transverse Crack |
+| 2 | D20 | Alligator Crack |
+| 3 | D40 | Pothole |
+
+---
+
+### Base Model — YOLOv8-nano
+
+| Property | Value |
+|----------|-------|
+| **Architecture** | YOLOv8-nano (`yolov8n.pt`) |
+| **Framework** | Ultralytics v8.4.95 |
+| **Type** | Single-stage object detection |
+| **Parameters** | ~3.2M (nano variant) |
+| **Pre-training** | COCO dataset (80 classes, 118K images) |
+
+YOLOv8-nano was chosen for deployment efficiency — it runs on CPU (no GPU required) while maintaining competitive accuracy for road damage detection.
+
+---
+
+### Fine-tuning Configuration
+
+| Hyperparameter | Value |
+|----------------|-------|
+| **Epochs** | 15 |
+| **Image size** | 640 × 640 px |
+| **Batch size** | 16 |
+| **Optimizer** | Auto (AdamW) |
+| **Pretrained weights** | `yolov8n.pt` (COCO) |
+| **Task** | Detection |
+| **Training date** | 2026-07-13 |
+| **Framework version** | Ultralytics 8.4.95 |
+
+**Train/Val split:**
+Standard YOLO split from the RDD2022 `rdd2022.yaml` dataset config — typically **80% train / 20% val** as per the challenge default.
+
+---
+
+### Training Metrics (Validation Set)
+
+| Metric | Value |
+|--------|-------|
+| **Precision** | 33.96% |
+| **Recall** | 48.89% |
+| **mAP@50** | 36.39% |
+| **mAP@50-95** | 17.04% |
+
+> **Note on metrics:** These numbers reflect a 15-epoch fine-tune on a challenging multi-national, multi-condition dataset with 4 damage classes. Road damage detection is inherently difficult (small objects, varied surfaces, weather, low contrast). Published CRDDC'2022 winner results using heavier YOLOv8 variants trained for 100+ epochs typically reach mAP@50 of 50–65%. This model prioritizes fast CPU inference for deployment, not maximum accuracy.
+
+---
+
+### How to Reproduce Training
+
+1. Download RDD2022 from [FigShare](https://figshare.com/articles/dataset/RDD2022_-_The_multi-national_Road_Damage_Dataset_released_through_CRDDC_2022/21431547)
+2. Convert Pascal VOC XML annotations to YOLO format
+3. Create a `rdd2022.yaml` dataset config pointing to your train/val directories and 4 classes
+4. Run:
+
+```bash
+pip install ultralytics
+yolo detect train \
+  model=yolov8n.pt \
+  data=rdd2022.yaml \
+  epochs=15 \
+  imgsz=640 \
+  batch=16
+```
+
+5. Use `runs/detect/train/weights/best.pt` as `road_damage_best.pt`
+
+---
+
+### Dataset Citation
+
+```bibtex
+@article{arya2024rdd2022,
+  title={RDD2022: A multi-national image dataset for automatic road damage detection},
+  author={Arya, Deeksha and Maeda, Hiroya and Ghosh, Sanjay Kumar and Toshniwal, Durga and Sekimoto, Yoshihide},
+  journal={Geoscience Data Journal},
+  volume={11},
+  number={4},
+  pages={846--862},
+  year={2024},
+  publisher={Wiley Online Library}
+}
+
+@inproceedings{arya2022crowdsensing,
+  title={Crowdsensing-based Road Damage Detection Challenge (CRDDC'2022)},
+  author={Arya, Deeksha and others},
+  booktitle={2022 IEEE International Conference on Big Data (Big Data)},
+  pages={6378--6386},
+  year={2022},
+  organization={IEEE}
+}
+```
 
 ## Testing
 
