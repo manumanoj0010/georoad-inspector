@@ -68,6 +68,12 @@ def load_model():
     logger.info(f"Classes: {class_mapping}")
 
 
+@app.get("/")
+def root():
+    """Root endpoint for HF Spaces health check."""
+    return {"status": "ok", "service": "georoad-yolo-inference"}
+
+
 @app.get("/health")
 def health():
     """Health check endpoint."""

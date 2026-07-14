@@ -4,14 +4,15 @@ WORKDIR /app
 
 ARG MODEL_WEIGHTS_URL="https://raw.githubusercontent.com/manumanoj0010/georoad-inspector/development/backend/models/road_damage_best.pt"
 
-# Install system deps for OpenCV (required by ultralytics)
+# Install system deps for OpenCV (required by ultralytics) and git (required by HF Spaces)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl libgl1 libglib2.0-0 \
+    curl git libgl1 libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Force cache bust on app code changes
 COPY app.py .
 RUN mkdir -p models \
     && curl -fL "$MODEL_WEIGHTS_URL" -o models/road_damage_best.pt
