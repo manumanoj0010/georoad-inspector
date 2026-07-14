@@ -1,0 +1,31 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./georoad.db
+      - UPLOAD_DIR=./uploads
+      - MODEL_WEIGHTS_PATH=./models/road_damage_best.pt
+      - APP_ENV=production
+      - CORS_ORIGINS=http://localhost:3000,http://localhost
+    volumes:
+      - backend_uploads:/app/uploads
+      - backend_db:/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  backend_uploads:
+  backend_db:

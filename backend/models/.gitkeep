@@ -1,0 +1,3 @@
+# Place YOLO model weights here.
+# The fine-tuned road damage model (road_damage_best.pt) should be in this directory.
+# Not committed to git due to file size — download or train separately.
