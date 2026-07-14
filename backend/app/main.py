@@ -29,12 +29,8 @@ async def lifespan(app: FastAPI):
     settings.upload_dir.mkdir(parents=True, exist_ok=True)
     logger.info(f"Upload directory: {settings.upload_dir}")
 
-    # Load YOLO model into memory
-    from app.services.inference import inference_service
-    try:
-        inference_service.load_model()
-    except FileNotFoundError:
-        logger.warning("YOLO model not found — inference will fail until model is available")
+    # Keep startup light on small instances; model is loaded lazily on first processing request.
+    logger.info("YOLO model will load lazily on first processing request")
 
     yield
 

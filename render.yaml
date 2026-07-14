@@ -14,6 +14,8 @@ services:
         value: ./models/road_damage_best.pt
       - key: APP_ENV
         value: production
+      - key: INFERENCE_SERVICE_URL
+        value: https://manumanoj0010-georoad-yolo.hf.space
       - key: CORS_ORIGINS
         value: https://georoad-inspector-ui.onrender.com,https://georoad-inspector.onrender.com
     disk:

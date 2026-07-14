@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     default_confidence_threshold: float = 0.25
     default_iou_threshold: float = 0.45
 
+    # Remote inference (Hugging Face Spaces)
+    inference_service_url: str = ""
+
     # ArcGIS Online
     arcgis_portal_url: str = ""
     arcgis_client_id: str = ""
@@ -40,6 +43,10 @@ class Settings(BaseSettings):
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def remote_inference_enabled(self) -> bool:
+        return bool(self.inference_service_url)
 
     @property
     def arcgis_enabled(self) -> bool:
