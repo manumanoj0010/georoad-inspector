@@ -58,6 +58,8 @@ app.add_middleware(
 )
 
 # Serve uploaded images as static files
+# StaticFiles requires directory existence at import time.
+settings.upload_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=str(settings.upload_dir)), name="uploads")
 
 # Register routers
