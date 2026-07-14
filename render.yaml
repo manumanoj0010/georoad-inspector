@@ -15,7 +15,7 @@ services:
       - key: APP_ENV
         value: production
       - key: CORS_ORIGINS
-        value: https://georoad-inspector.onrender.com
+        value: https://georoad-inspector-ui.onrender.com,https://georoad-inspector.onrender.com
     disk:
       name: georoad-data
       mountPath: /opt/render/project/data
