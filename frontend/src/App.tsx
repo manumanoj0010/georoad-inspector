@@ -41,6 +41,24 @@ export default function App() {
     window.location.reload();
   };
 
+  const SAMPLE_IMAGES = [
+    { name: 'sample_road_damage_1.jpg', label: 'Road Damage #1' },
+    { name: 'sample_road_damage_2.jpg', label: 'Road Damage #2' },
+    { name: 'sample_road_damage_3.jpg', label: 'Road Damage #3' },
+    { name: 'sample_road_damage_4.jpg', label: 'Road Damage #4' },
+  ];
+
+  const handleUseSamples = async () => {
+    const files: File[] = await Promise.all(
+      SAMPLE_IMAGES.map(async ({ name, label }) => {
+        const res = await fetch(`/samples/${name}`);
+        const blob = await res.blob();
+        return new File([blob], label + '.jpg', { type: 'image/jpeg' });
+      })
+    );
+    await uploadImages(files);
+  };
+
   // Images where YOLO found no road damage (likely non-road photos)
   const nonRoadImages = images.filter(i =>
     i.processing_status === 'completed' && i.error_message === 'no_road_damage_detected'
@@ -196,6 +214,36 @@ export default function App() {
                   ✓ {images.length} image(s) uploaded • {images.filter(i => i.latitude).length} with GPS
                 </p>
               )}
+            </div>
+
+            {/* Sample images panel */}
+            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-sm font-semibold text-blue-800">🧪 Don't have road images? Try our samples</p>
+                  <p className="text-xs text-blue-600 mt-0.5">4 real road damage photos — potholes & cracks</p>
+                </div>
+                <button
+                  onClick={handleUseSamples}
+                  disabled={loading}
+                  className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg
+                    hover:bg-blue-700 disabled:opacity-50 transition-colors whitespace-nowrap"
+                >
+                  {loading ? 'Loading...' : 'Use Sample Images'}
+                </button>
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                {SAMPLE_IMAGES.map(({ name, label }) => (
+                  <div key={name} className="rounded-lg overflow-hidden border border-blue-200 bg-white">
+                    <img
+                      src={`/samples/${name}`}
+                      alt={label}
+                      className="w-full h-16 object-cover"
+                    />
+                    <p className="text-xs text-blue-700 text-center py-1 px-1 truncate">{label}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
