@@ -1,15 +1,102 @@
 # GeoRoad Inspector
 
-AI-powered roadway inspection application that detects road damage from street-level images, maps detections to geographic coordinates, and publishes structured GIS data to ArcGIS Online.
+> AI-powered roadway inspection — detects road damage from street-level images, maps detections to GPS coordinates, and publishes structured GIS data to ArcGIS Online.
 
-## Architecture
+**Built by [Manoj Boddu](https://www.linkedin.com/in/manumanoj0010/) · [Source Code](https://github.com/manumanoj0010/georoad-inspector)**
 
+---
+
+## System Architecture
+
+```mermaid
+graph TB
+    subgraph "User Browser"
+        FE["React Frontend<br/>(Render Static Site - FREE)"]
+    end
+
+    subgraph "Render - $7.25/mo"
+        API["FastAPI Backend<br/>(Render Starter - $7/mo)<br/>512MB RAM"]
+        DISK["Persistent Disk<br/>($0.25/mo - 1GB)<br/>Uploads + SQLite DB"]
+        API --- DISK
+    end
+
+    subgraph "Hugging Face Spaces"
+        HFS["YOLO Inference Service<br/>(FastAPI on Docker Space)"]
+        MODEL["YOLOv8 Model<br/>road_damage_best.pt"]
+        HFS --- MODEL
+    end
+
+    subgraph "ArcGIS Online"
+        ARCGIS["Hosted Feature Layer<br/>(Point geometry, WGS84)"]
+    end
+
+    FE -->|"Upload images<br/>Review detections<br/>View map"| API
+    API -->|"Send image bytes<br/>for inference"| HFS
+    HFS -->|"Return bounding boxes<br/>+ classifications"| API
+    API -->|"Publish confirmed<br/>detections (OAuth)"| ARCGIS
 ```
-Images → FastAPI ingestion → EXIF extraction → YOLO inference → Detection processing → PostgreSQL
-                                                                                          ↓
-                                                                           GeoJSON generation
-                                                                        ├── Leaflet inspection map
-                                                                        └── ArcGIS hosted feature layer
+
+## Request Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User Browser
+    participant FE as Frontend (Render Static)
+    participant API as Backend API (Render $7)
+    participant HFS as YOLO Service (HF Docker Space)
+    participant AG as ArcGIS Online
+
+    Note over U,AG: 1. Upload Images
+    U->>FE: Drag & drop images
+    FE->>API: POST /api/runs/{id}/images
+    API->>API: Extract EXIF GPS, store to disk
+
+    Note over U,AG: 2. Process (Inference)
+    FE->>API: POST /api/runs/{id}/process
+    loop Each image
+        API->>HFS: POST /detect (image bytes)
+        HFS->>HFS: YOLO inference
+        HFS-->>API: Bounding boxes + labels + confidence
+    end
+    API->>API: Create Detection records in SQLite
+
+    Note over U,AG: 3. Review & Map
+    FE->>API: GET /api/runs/{id}/detections
+    API-->>FE: Detection list with GPS
+    U->>FE: Confirm/Reject detections
+    FE->>API: POST /api/detections/{id}/confirm
+
+    Note over U,AG: 4. Publish to ArcGIS
+    FE->>API: POST /api/runs/{id}/publish/arcgis
+    API->>AG: OAuth token + addFeatures
+    AG-->>API: objectIds
+    API-->>FE: Published count
+```
+
+## Deployment Cost Breakdown
+
+| Component | Platform | Cost | RAM | Purpose |
+|-----------|----------|------|-----|---------|
+| Frontend | Render Static | $0 | CDN | React UI, Leaflet map |
+| Backend API | Render Starter | $7/mo | 512MB | REST API, DB, uploads, EXIF, review, GeoJSON, ArcGIS publish |
+| Persistent Disk | Render | $0.25/mo | 1GB | Image storage + SQLite |
+| YOLO Inference | HF Docker Space | Varies by plan | Varies | Model loading and detection |
+| GIS Layer | ArcGIS Online | $0* | — | Hosted feature layer for confirmed detections |
+
+**Total Render cost: ~$7.25/month with full live inference**
+
+## Deployment Topology
+
+```mermaid
+graph LR
+    subgraph "GitHub Repo"
+        CODE["georoad-inspector"]
+    end
+
+    CODE -->|"auto-deploy<br/>render.yaml"| RENDER["Render<br/>(API + Static)"]
+    CODE -->|"push to HF Space repo<br/>inference-service/"| HFS["Hugging Face Docker Space<br/>(Inference)"]
+
+    RENDER -->|"INFERENCE_SERVICE_URL"| HFS
 ```
 
 ## Features
